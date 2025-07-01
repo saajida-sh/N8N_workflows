@@ -1,0 +1,398 @@
+{
+  "name": "Meet_Report_Download",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "labelIds": [
+            "INBOX"
+          ],
+          "q": "subject:Meet Attendance Report",
+          "sender": "saajida.fhub@gmail.com"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -600,
+        -440
+      ],
+      "id": "55c5c5e1-d9e1-4b5d-a08e-6e6ca5cd5c84",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "jDEyHXZoYQfo2wZK",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "saajida.fhub@gmail.com",
+          "mode": "list",
+          "cachedResultName": "saajida.fhub@gmail.com"
+        },
+        "limit": 10,
+        "timeMin": "={{ $now.minus(2, 'hours') }}",
+        "timeMax": "={{ $now }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        -380,
+        -440
+      ],
+      "id": "ff95700c-cff2-4fcd-8c03-82e287bfc116",
+      "name": "Get many events",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "OffXCKUWtNWIzG07",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        940,
+        -440
+      ],
+      "id": "47c092e3-e457-4d57-a7b7-23705e6925f8",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "binaryPropertyName": "attachment_0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        480,
+        -540
+      ],
+      "id": "7d722d17-27e0-4611-9875-a71018d94c9c",
+      "name": "Extract from File",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "options": {
+          "fileName": "=Attendance Report of {{ $json.summary }} - {{ $json.session_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1160,
+        -440
+      ],
+      "id": "4ef442a1-bbf8-40cd-bdf8-e71e2d4d23be",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1tP3Qq5UVCdU2KQnT54P7TT8_rxh_tLnw",
+          "mode": "list",
+          "cachedResultName": "Meet Attendance Report",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1tP3Qq5UVCdU2KQnT54P7TT8_rxh_tLnw"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1480,
+        -260
+      ],
+      "id": "4423222c-7d04-46ea-aeab-302658b57ae4",
+      "name": "Upload File to Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "90sAOcCpWPhDtxl5",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        60,
+        -440
+      ],
+      "id": "a2010529-f35e-48ad-a500-4260242f3b02",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        260,
+        -720
+      ],
+      "id": "79230f47-820e-4362-af8f-92c857a5b12b",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6972b4a2-567d-42a9-ba18-60fe7500fcf6",
+              "name": "session_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "a8463982-5cd8-4c83-8c06-d1d275c830e7",
+              "name": "summary",
+              "value": "={{ $json.summary }}",
+              "type": "string"
+            },
+            {
+              "id": "fbdb68e9-bf52-455b-bf36-5818a7ef3428",
+              "name": "end_time",
+              "value": "={{ $json.end.dateTime }}",
+              "type": "string"
+            },
+            {
+              "id": "7ef2794c-5e12-403e-afea-959f2a05f36e",
+              "name": "start_time",
+              "value": "={{ $json.start.dateTime }}",
+              "type": "string"
+            },
+            {
+              "id": "ba0f4880-9639-4eec-a715-a2544c0f1f02",
+              "name": "name",
+              "value": "=Attendance Report of  {{ $json.summary }} - {{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -160,
+        -440
+      ],
+      "id": "b9e32853-2f03-4afd-bd5a-7bcc8559faa5",
+      "name": "Set Fields"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "simple": false,
+        "filters": {
+          "labelIds": [
+            "INBOX"
+          ],
+          "q": "=subject: Meet Attendance Report of {{ $json.summary }}",
+          "receivedAfter": "={{ $json.start_time }}",
+          "sender": "saajida.fhub@gmail.com"
+        },
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        260,
+        -540
+      ],
+      "id": "8a84ce79-875f-4fd3-a480-ebca8c7b6ddb",
+      "name": "Get messages",
+      "webhookId": "aa71906d-8ea6-495f-82e4-78edad63b328",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "jDEyHXZoYQfo2wZK",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = items;\n\n// Helper to convert \"HH:MM:SS\" to seconds\nfunction parseDuration(durationStr) {\n  const parts = durationStr.split(':').map(Number);\n  return parts[0] * 3600 + parts[1] * 60 + parts[2];\n}\n\n// Sort to find the first join time (session start)\ninputData.sort((a, b) => new Date(a.json[\"Join Time\"]) - new Date(b.json[\"Join Time\"]));\nconst sessionStartTime = new Date(inputData[0].json[\"Join Time\"]);\n\nlet totalDurationSeconds = 0;\nlet lateJoiners = 0;\nlet emailList = [];\n\ninputData.forEach(participant => {\n  const joinTime = new Date(participant.json[\"Join Time\"]);\n  const duration = parseDuration(participant.json[\"Duration\"]);\n\n  totalDurationSeconds += duration;\n\n  if (joinTime > sessionStartTime) {\n    lateJoiners += 1;\n  }\n\n  emailList.push(participant.json[\"Participant Email\"]);\n});\n\nconst totalParticipants = inputData.length;\nconst averageDurationSeconds = totalDurationSeconds / totalParticipants;\n\n// Convert seconds to HH:MM:SS\nfunction formatDuration(seconds) {\n  const hrs = String(Math.floor(seconds / 3600)).padStart(2, '0');\n  const mins = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');\n  const secs = String(seconds % 60).padStart(2, '0');\n  return `${hrs}:${mins}:${secs}`;\n}\n\nconst avgDurationFormatted = formatDuration(Math.round(averageDurationSeconds));\n\n// Return single item output\nreturn [\n  {\n    json: {\n      total_attendees: totalParticipants,\n      late_joiners: lateJoiners,\n      average_duration: avgDurationFormatted,\n      participant_emails: emailList.join(', ')\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        -540
+      ],
+      "id": "4628a55e-277f-4057-b253-ca7d55f55adc",
+      "name": "Process Report"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many events": {
+      "main": [
+        [
+          {
+            "node": "Set Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Process Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Upload File to Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Get messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload File to Drive": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Fields": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get messages": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Report": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "XEfJhsGUvdYNVb5P"
+  },
+  "versionId": "dee75ffa-af7f-4e24-b8c8-b26cb1d98553",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "848f8f541b82798358ead3f046b054774a39f912a852058c6c5a2fbeb532e7ca"
+  },
+  "id": "cyQJt0Vo2unvD6rH",
+  "tags": []
+}

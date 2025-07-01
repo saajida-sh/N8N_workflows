@@ -1,0 +1,1134 @@
+{
+  "name": "Post Event Report",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "getTranscriptsList",
+        "filters": {
+          "fromDate": "={{ $today }}",
+          "title": "={{ $json.Session }}"
+        }
+      },
+      "type": "@firefliesai/n8n-nodes-fireflies.fireflies",
+      "typeVersion": 1,
+      "position": [
+        520,
+        240
+      ],
+      "id": "45fbbd3f-1db9-4766-9511-4db4471ad129",
+      "name": "Get a list of transcripts",
+      "alwaysOutputData": false,
+      "credentials": {
+        "firefliesApi": {
+          "id": "yZRp7YT7H3PLMn5b",
+          "name": "Fireflies account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().filter(item => {\n  return item.json.organizer?.email === 'saajida.fhub@gmail.com'; // replace with your calendar email\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -540,
+        35
+      ],
+      "id": "9b45afed-9cf0-4cd0-90c8-a94de9530f68",
+      "name": "Filter by Organizer"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "saajida.fhub@gmail.com",
+          "mode": "list",
+          "cachedResultName": "saajida.fhub@gmail.com"
+        },
+        "returnAll": true,
+        "timeMin": "={{ $now.minus(2, 'hours') }}",
+        "timeMax": "={{ $now }}",
+        "options": {
+          "orderBy": "startTime"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        -760,
+        35
+      ],
+      "id": "8aea3d77-638c-4a3c-878c-7f2d72faabf8",
+      "name": "Get Events Done ",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "OffXCKUWtNWIzG07",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getTranscriptSummary",
+        "transcriptId": "={{ $json.data.id }}"
+      },
+      "type": "@firefliesai/n8n-nodes-fireflies.fireflies",
+      "typeVersion": 1,
+      "position": [
+        860,
+        240
+      ],
+      "id": "3dd7829c-ce78-4f7a-8850-a5b03dc1e1a8",
+      "name": "Get a summary of a transcript",
+      "credentials": {
+        "firefliesApi": {
+          "id": "yZRp7YT7H3PLMn5b",
+          "name": "Fireflies account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const ev = item.json;                       // shortcut\n  const attendees = ev.attendees ?? [];\n\n  // Basic counts\n  const invited     = attendees.length;\n  const rsvpYes     = attendees.filter(a => a.responseStatus === 'accepted').length;\n  const rsvpNo      = attendees.filter(a => a.responseStatus === 'declined').length;\n  const noResponse  = attendees.filter(a => a.responseStatus === 'needsAction').length;\n\n  // Invitee e-mails as a flat list\n  const inviteeEmails = attendees\n      .map(a => a.email || a.emailAddress || '')\n      .filter(Boolean);\n\n  // Date / time formatting\n  const startISO = ev.start?.dateTime || '';\n  let startDate = '', startTime = '';\n\n  if (startISO) {\n    const d = new Date(startISO);\n    startDate = d.toISOString().split('T')[0];          // yyyy-mm-dd\n    startTime = d.toLocaleTimeString('en-US', {\n      hour:   '2-digit',\n      minute: '2-digit',\n      hour12: false,\n      timeZone: 'Asia/Dubai',                           // keep in sync with calendar TZ\n    });\n  }\n\n  return {\n    json: {\n      /* renamed so it will not clash with Gmail id later */\n      sessionId: ev.id,\n\n      title:     ev.summary,\n      startISO,\n      startDate,\n      startTime,\n\n      invited,\n      rsvpYes,\n      rsvpNo,\n      noResponse,\n      inviteeEmails,\n\n      meetLink:  ev.hangoutLink ?? '',\n      status:    ev.status,\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        35
+      ],
+      "id": "5d815d0c-fafa-4ee0-a009-38c8f28e087a",
+      "name": "Extract Relevant Info"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1PBrzINu84OcQBwuQNz36fMZYrnGIVVmxZH01yz8sDvI",
+          "mode": "list",
+          "cachedResultName": "Sessions",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1PBrzINu84OcQBwuQNz36fMZYrnGIVVmxZH01yz8sDvI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sessions",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1PBrzINu84OcQBwuQNz36fMZYrnGIVVmxZH01yz8sDvI/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Session_Id",
+              "lookupValue": "={{ $json.sessionId }}"
+            },
+            {
+              "lookupColumn": "Processed"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -100,
+        35
+      ],
+      "id": "1278eba6-11ef-4e96-a6d3-50ccab57cafc",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "N4y6QOAM8ydPhZGB",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "={{ $json.Session_Id }}",
+        "filter": {
+          "driveId": {
+            "mode": "list",
+            "value": "My Drive"
+          },
+          "folderId": {
+            "__rl": true,
+            "value": "1tP3Qq5UVCdU2KQnT54P7TT8_rxh_tLnw",
+            "mode": "list",
+            "cachedResultName": "Meet Attendance Report",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1tP3Qq5UVCdU2KQnT54P7TT8_rxh_tLnw"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        340,
+        -290
+      ],
+      "id": "ff4fc520-f2f4-4356-83a4-d333eea150de",
+      "name": "Search files and folders",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "90sAOcCpWPhDtxl5",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1-7lpKL7fTKOU9X9XUA1oKAEGVkEVQhIa",
+          "mode": "list",
+          "cachedResultName": "Summaries",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1-7lpKL7fTKOU9X9XUA1oKAEGVkEVQhIa"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1200,
+        35
+      ],
+      "id": "e8f0ad1c-9105-4133-8ddb-7447a2c95546",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "90sAOcCpWPhDtxl5",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -980,
+        35
+      ],
+      "id": "47b0ef1e-0f65-41ba-9181-be1e2cdfef13",
+      "name": "Wait1",
+      "webhookId": "81ef9ed7-55c9-46f6-a117-5cb7d168783f"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        120,
+        35
+      ],
+      "id": "8465f0a8-bcb9-4a57-a813-ec2e4263a997",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ceb71549-60c8-4287-8e4c-26d5c494b2b8",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        560,
+        -290
+      ],
+      "id": "f4aa81ee-0524-41ad-9e68-7d3f45e56197",
+      "name": "If File not available in Drive"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        760,
+        -400
+      ],
+      "id": "9892a051-7c7e-4a1e-ad62-f281554dd106",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "90sAOcCpWPhDtxl5",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        -400
+      ],
+      "id": "ea564a70-1870-46f0-9e8a-e4f890740e10",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 3,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1220,
+        60
+      ],
+      "id": "3f5eb21d-5f4b-4c9c-b450-76132de25d75",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const json = item.json;\n  const summaryData = json.data?.summary || {};\n\n  const invited = json.Invited || 0;\n  const rsvpedYes = json.RSVPed_Yes || 0;\n  const rsvpedNo = json.RSVPed_No || 0;\n\n  const attended = parseInt(json[\"﻿total_attendees\"] || 0);\n  const emailsJoined = (json.participant_emails || \"\").split(\",\").map(e => e.trim());\n  const invitedEmails = json.Invitees || [];\n\n  const uninvited = emailsJoined.filter(email => !invitedEmails.includes(email));\n  const uninvitedCount = uninvited.length;\n\n  const avgDuration = json.average_duration || \"00:00:00\";\n  const actionItems = summaryData.action_items || \"\";\n  const keywords = summaryData.keywords || [];\n\n  const actionCount = (actionItems.match(/\\n/g) || []).length;\n  \n  return {\n    json: {\n      sessionTitle: json.summary,\n      sessionId: json.session_id,\n      startTime: json.start_time,\n      endTime: json.end_time,\n      invited,\n      rsvpedYes,\n      rsvpedNo,\n      attended,\n      uninvitedCount,\n      lateJoiners: json.late_joiners,\n      avgDuration,\n      actionCount,\n      keywords,\n      firefliesSummary: summaryData.short_summary || \"\",\n      discussion: summaryData.bullet_gist || \"\"\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1420,
+        60
+      ],
+      "id": "4b47310b-a120-41c2-95c3-38823406ee68",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a data assistant generating concise meeting summaries. Generate a professional meeting report based on the provided meeting data.\n\nRequirements:\nDo not include any introductory text like “Here is your summary” or “Below is the report.”\n\nBegin directly with:\n\n1. **Overview (3-4 sentences in bullet points)**  \n\n2. **Metrics**  \n**Total Invited**:  \n**RSVPed Yes**:   \n**Total Attended**:  \n**Attended Without Invite**: \n**Late Joiners**:\n**Average Duration**:  \n**Number of Action Items**: \n3. **Keywords** (3-4 keywords from list)  \n\nUse markdown format with **bold labels** andbullet points.\nMaintain a polished, professional tone.\nMeeting Data:\n{{ JSON.stringify($json, null, 2) }}\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        160
+      ],
+      "id": "20d7ee12-7ea3-4c83-a38c-791687f7244c",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        1640,
+        380
+      ],
+      "id": "7477e4b6-7b55-4e95-b905-dfaf49c357fc",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "35HYXzFaSNonABl1",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  let report = item.json.output || \"\";\n\n  // Remove unnecessary headers\n  report = report.replace(/\\*\\*Meeting Summary:\\*\\*\\n*/, \"\");\n\n  // Split sections (like Overview, Metrics, Keywords)\n  const sections = report.split(/\\n{2,}/g); // Split on 2+ line breaks\n  let htmlParts = [];\n\n  for (let section of sections) {\n    // Section heading in bold\n    const headingMatch = section.match(/^\\*\\*(.*?)\\*\\*/);\n    if (headingMatch) {\n      const heading = headingMatch[1];\n      htmlParts.push(`<h3>${heading}</h3>`);\n      section = section.replace(/^\\*\\*.*?\\*\\*\\n*/, \"\"); // Remove heading line\n    }\n\n    // Convert bullet points and inline bold\n    section = section\n      .replace(/\\*\\*(.*?)\\*\\*/g, \"<strong>$1</strong>\") // Bold\n      .replace(/• (.*)/g, \"<li>$1</li>\")               // Bullets with •\n      .replace(/\\n/g, \"<br>\");                         // Line breaks\n\n    // Wrap <li> items in <ul> if any\n    if (section.includes(\"<li>\")) {\n      section = `<ul>${section}</ul>`;\n    }\n\n    htmlParts.push(`<p>${section}</p>`);\n  }\n\n  const htmlContent = `<div style=\"font-family: Arial, sans-serif;\">${htmlParts.join(\"\")}</div>`;\n\n  return {\n    json: {\n      subject: \"Meeting Report - Test Event 1\",\n      plainText: report,\n      html: htmlContent\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2040,
+        160
+      ],
+      "id": "7965c774-c917-4b08-b3d0-6fdd5cc120f9",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "sendTo": "saajida.fhub@gmail.com",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2260,
+        160
+      ],
+      "id": "b9d59061-1455-4bd4-9b3c-ddd04461fa26",
+      "name": "Send a message",
+      "webhookId": "6c1bc294-86ae-47b1-b456-c2f7abcc1540",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "jDEyHXZoYQfo2wZK",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1PBrzINu84OcQBwuQNz36fMZYrnGIVVmxZH01yz8sDvI",
+          "mode": "list",
+          "cachedResultName": "Sessions",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1PBrzINu84OcQBwuQNz36fMZYrnGIVVmxZH01yz8sDvI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sessions",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1PBrzINu84OcQBwuQNz36fMZYrnGIVVmxZH01yz8sDvI/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Processed": "Yes",
+            "Session_Id": "={{ $json.sessionId }}"
+          },
+          "matchingColumns": [
+            "Session_Id"
+          ],
+          "schema": [
+            {
+              "id": "Session_Id",
+              "displayName": "Session_Id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Session",
+              "displayName": "Session",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Start_Time",
+              "displayName": "Start_Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Invited",
+              "displayName": "Invited",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "RSVPed_Yes",
+              "displayName": "RSVPed_Yes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "RSVPed_No",
+              "displayName": "RSVPed_No",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "No_Response",
+              "displayName": "No_Response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Invitees",
+              "displayName": "Invitees",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Link",
+              "displayName": "Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Processed",
+              "displayName": "Processed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        2780,
+        420
+      ],
+      "id": "331530c9-fec5-49dc-a0c6-e32e6ac22bc3",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "N4y6QOAM8ydPhZGB",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2500,
+        80
+      ],
+      "id": "5bd6536c-ca6a-4218-9f79-a98f34c4bda1",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "14ZcaZ5E1yrfz8M56XtDktMfzfr4upIFx00mE7Qydo4k",
+          "mode": "list",
+          "cachedResultName": "Post Event Report",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14ZcaZ5E1yrfz8M56XtDktMfzfr4upIFx00mE7Qydo4k/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14ZcaZ5E1yrfz8M56XtDktMfzfr4upIFx00mE7Qydo4k/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Session_Id": "={{ $json.sessionId }}",
+            "Session_Title": "={{ $json.sessionTitle }}",
+            "Total_Invited": "={{ $json.invited }}",
+            "RSVPed_Yes": "={{ $json.rsvpedYes }}",
+            "RSVPed_No": "={{ $json.rsvpedNo }}",
+            "Total_Attended": "={{ $json.attended }}",
+            "Attended_Without_Invite": "={{ $json.uninvitedCount }}",
+            "Keywords": "={{ $json.keywords }}",
+            "Meeting_Overview": "={{ $json.discussion }}",
+            "Action_Items": "={{ $json.actionCount }}",
+            "Late_Joiners": "={{ $json.lateJoiners }}",
+            "Avg_Duration_Minutes": "={{ $json.avgDuration }}"
+          },
+          "matchingColumns": [
+            "Session_Id"
+          ],
+          "schema": [
+            {
+              "id": "Session_Id",
+              "displayName": "Session_Id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Session_Title",
+              "displayName": "Session_Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total_Invited",
+              "displayName": "Total_Invited",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "RSVPed_Yes",
+              "displayName": "RSVPed_Yes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "RSVPed_No",
+              "displayName": "RSVPed_No",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total_Attended",
+              "displayName": "Total_Attended",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Attended_Without_Invite",
+              "displayName": "Attended_Without_Invite",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Late_Joiners",
+              "displayName": "Late_Joiners",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Avg_Duration_Minutes",
+              "displayName": "Avg_Duration_Minutes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Action_Items",
+              "displayName": "Action_Items",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Keywords",
+              "displayName": "Keywords",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Meeting_Overview",
+              "displayName": "Meeting_Overview",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        2780,
+        20
+      ],
+      "id": "d8370bda-3d0b-4a61-9e14-e84a74e3c9d0",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "N4y6QOAM8ydPhZGB",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        760,
+        -140
+      ],
+      "id": "3e205f3a-fe14-43d5-8a8b-c088cf687bb0",
+      "name": "No Operation, do nothing"
+    }
+  ],
+  "pinData": {
+    "Get a summary of a transcript": [
+      {
+        "json": {
+          "success": true,
+          "data": {
+            "summary": {
+              "keywords": [
+                "Fireflies",
+                "N8N workflow",
+                "post-event",
+                "Google Report",
+                "feedback",
+                "automation"
+              ],
+              "action_items": "\n**Saajida Shajahan**\nWork on the report functionality and attach the new Fireflies node in N8N workflow (01:03)\nProceed with Google Report simulation after Fireflies integration is complete (01:03)\nImplement meeting conference applications following report completion (01:03)\n",
+              "outline": null,
+              "shorthand_bullet": "📅 **Event Setup & Context** (00:00 - 01:03)\nMeeting conducted as test event for Fireflies integration with Fireflies already joined and recording\nDiscussion focused on post-event workflow requirements for automated processing after events conclude\n🔄 **Automated Workflow Architecture** (01:03 - 01:03)\nN8N workflow trigger configured to run every midnight to check for completed events from that day\nSystem will automatically extract Google Report and Fireflies analytics summary for completed events\nMerged report submission process established to deliver combined analytics to session manager\n📝 **Feedback Integration Challenges** (01:03 - 01:03)\nParticipant feedback collection identified as problematic due to delayed response times - participants may take up to a week to provide feedback\nDecision made to implement separate workflow for feedback processing rather than integrated approach due to timing issues\nManual extraction techniques required for dashboard creation from Google Sheets even with automated feedback collection\n🚀 **Implementation Plan** (01:03 - 01:03)\nSaajida assigned to work on report functionality, specifically integrating new Fireflies node in N8N workflow\nGoogle Report simulation planned after Fireflies integration, pending workspace payment upgrade\nMeeting conference applications scheduled as next phase after report completion\n",
+              "overview": "- Fireflies integration tested successfully; the focus was on automating post-event workflows for efficient processing.  \n- N8N workflow set to trigger nightly, checking for completed events, streamlining analytics collection from Google Report and Fireflies.  \n- Merged report process established to deliver comprehensive analytics to session managers, improving decision-making efficacy.  \n- Participant feedback collection is delayed, with responses taking up to a week; separate workflow needed for timely processing.  \n- Manual techniques necessary for creating dashboards from Google Sheets, even with automation in feedback collection.  \n- Saajida assigned to enhance report functionality by integrating the new Fireflies node into the N8N workflow.  \n- Google Report simulation planned post-Fireflies integration, contingent on workspace payment upgrade.  \n- Upcoming phase involves scheduling meeting conference applications after completion of report functionality.  ",
+              "bullet_gist": "📅 Event Setup & Context: The meeting was a test event for Fireflies integration, focusing on automating post-event workflows.\n🔄 Automated Workflow Architecture: N8N workflow triggers nightly to check for completed events and extract analytics from Google Report and Fireflies.\n📝 Feedback Integration Challenges: Participant feedback collection is delayed, necessitating a separate workflow for timely processing.\n🚀 Implementation Plan: Saajida will enhance report functionality by integrating the Fireflies node, with subsequent Google Report simulation planned.",
+              "gist": "The meeting aimed to test Fireflies integration and discuss automating post-event workflows for improved analytics processing.",
+              "short_summary": "A successful testing of the Fireflies integration aimed at automating post-event workflows was conducted. The N8N workflow is now set to trigger nightly, effectively checking for completed events and streamlining the collection of analytics from Google Report and Fireflies. A merged report process has been established to provide comprehensive analytics to session managers, enhancing decision-making. However, participant feedback collection is delayed, requiring a separate workflow to ensure timely processing. Despite automation, manual techniques are still needed for dashboard creation from Google Sheets. Saajida has been assigned to enhance report functionality by integrating the new Fireflies node into the N8N workflow, with a Google Report simulation planned post-integration, contingent on a workspace payment upgrade. The next phase will involve scheduling meeting conference applications after completing the report functionality.",
+              "short_overview": null,
+              "meeting_type": null,
+              "topics_discussed": null,
+              "transcript_chapters": [],
+              "extended_sections": []
+            }
+          }
+        }
+      },
+      {
+        "json": {
+          "success": true,
+          "data": {
+            "summary": {
+              "keywords": [
+                "homework assignment",
+                "Tafsir",
+                "Ayatul Kursi",
+                "names of Allah",
+                "Firefly notetaker",
+                "evaluation"
+              ],
+              "action_items": "\n**Farha Salim**\nGive homework assignment before Saturday this week (08:58)\nPublish corrected assignment results before next Saturday's class (09:08)\n\n**Unassigned**\nSubmit homework assignment by next Saturday (09:05)\n",
+              "outline": null,
+              "shorthand_bullet": "📝 **Firefly AI note-taking discussion** (02:58 - 04:01)\nFarha explained that Noor's Firefly automatically joined yesterday's call.\nClarified that it joins scheduled meetings in calendars but not instant meetings.\n🔤 **Language requirement clarification** (03:27 - 03:35)\nConfirmed meetings must be conducted in English.\nThe AI note-taker doesn't understand other languages like 'Mariana'.\n📚 **Homework assignment planning** (04:01 - 08:43)\nTwo assignment options discussed: names of Allah from Quran with reflective thoughts, or short answer questions from Tafsir as-Sa'di on Ayatul Kursi.\n✅ **Assignment evaluation approach** (05:09 - 05:48)\nAgreed on non-competitive grading system.\nFull marks for completion or minus marks for mistakes only, avoiding ranking students on reflective content.\n📖 **Tafsir as-Sa'di content review** (05:48 - 06:50)\nDiscussed three-page section on Ayatul Kursi.\nDetails like difference between Arsh (throne) and Kursi (footstool) not covered in previous class.\n🔄 **Previous class content recap** (07:05 - 07:41)\nFarha had already explained five names of Allah from Ayatul Kursi in detail during previous session.\n⏰ **Assignment timeline planning** (08:58 - 09:41)\nAssignment to be given before Saturday with one-week completion period.\nCorrected results published before next Saturday class on Surat An-Nas.\n",
+              "overview": "- Noor's Firefly AI note-taker automatically joins scheduled meetings, streamlining documentation efforts for participants.  \n- All meeting discussions must be conducted in English, as the AI note-taker does not process other languages.  \n- Two assignment options were presented: reflective thoughts on the names of Allah from the Quran or short answers from Tafsir as-Sa'di on Ayatul Kursi.  \n- A non-competitive grading approach was established, focusing on completion with points deducted only for mistakes, enhancing student engagement.  \n- The three-page section on Ayatul Kursi from Tafsir as-Sa'di will be reviewed to address gaps from previous classes, particularly regarding Arsh and Kursi concepts.  \n- Previous session covered five names of Allah from Ayatul Kursi, with a promise of further exploration in upcoming discussions.  \n- Assignments will be distributed before Saturday, allowing students a one-week period for completion.  \n- Corrected assignment results will be published before the next Saturday class on Surat An-Nas to ensure timely feedback for students.  \n- Focus on enhancing comprehension of theological concepts and fostering a reflective learning environment was emphasized throughout the meeting.  \n- Participants agreed on clarity and structure for assignments to support student learning outcomes effectively.  ",
+              "bullet_gist": "📅 AI Note-Taker Implementation: Noor's Firefly AI will join meetings to streamline documentation efforts.\n📚 Assignment Options: Students can choose between reflective thoughts on Allah's names or Tafsir as-Sa'di short answers.\n🏆 Non-Competitive Grading: Grading focuses on completion, with points deducted only for errors to enhance engagement.\n🔄 Review of Tafsir as-Sa'di: A three-page section on Ayatul Kursi will be reviewed to clarify concepts previously discussed.\n⏰ Timely Feedback: Corrected assignments will be published before the next class for effective learning.",
+              "gist": "The meeting focused on enhancing student engagement through reflective assignments and a non-competitive grading approach.",
+              "short_summary": "The meeting emphasized the introduction of Noor's Firefly AI note-taker to streamline documentation during scheduled meetings, ensuring discussions are held in English for effective processing. Two assignment options were proposed: reflective thoughts on the names of Allah from the Quran or concise answers from Tafsir as-Sa'di regarding Ayatul Kursi. A non-competitive grading system was established, prioritizing completion over competition, which aims to boost student engagement. The group discussed reviewing a three-page section from Tafsir as-Sa'di to fill knowledge gaps about Arsh and Kursi concepts, building upon previously covered names of Allah. Assignments will be distributed before Saturday, providing a week for completion, with corrected results shared before the next class on Surat An-Nas to ensure timely feedback. Overall, enhancing comprehension of theological concepts and creating a reflective learning environment were core objectives.",
+              "short_overview": null,
+              "meeting_type": null,
+              "topics_discussed": null,
+              "transcript_chapters": [],
+              "extended_sections": []
+            }
+          }
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Get a list of transcripts": {
+      "main": [
+        [
+          {
+            "node": "Get a summary of a transcript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter by Organizer": {
+      "main": [
+        [
+          {
+            "node": "Extract Relevant Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Events Done ": {
+      "main": [
+        [
+          {
+            "node": "Filter by Organizer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a summary of a transcript": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Extract Relevant Info": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Get Events Done ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Search files and folders",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get a list of transcripts",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Search files and folders": {
+      "main": [
+        [
+          {
+            "node": "If File not available in Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If File not available in Drive": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "XEfJhsGUvdYNVb5P"
+  },
+  "versionId": "f301d2e5-4e4d-451c-bdb2-f867a5745920",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "848f8f541b82798358ead3f046b054774a39f912a852058c6c5a2fbeb532e7ca"
+  },
+  "id": "lSiRVqHS31wvo6jj",
+  "tags": []
+}
