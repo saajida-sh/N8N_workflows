@@ -1,0 +1,145 @@
+{
+  "name": "Live_Session_Reminders",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1120,
+        80
+      ],
+      "id": "a3868bc8-c297-4784-84d2-19572fa7a466",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1PBrzINu84OcQBwuQNz36fMZYrnGIVVmxZH01yz8sDvI",
+          "mode": "list",
+          "cachedResultName": "Live_Session_Reminder",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1PBrzINu84OcQBwuQNz36fMZYrnGIVVmxZH01yz8sDvI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sessions",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1PBrzINu84OcQBwuQNz36fMZYrnGIVVmxZH01yz8sDvI/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -900,
+        80
+      ],
+      "id": "1ed1d109-5a83-4d15-b3a7-17f025065a46",
+      "name": "Read Sessions Data",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "N4y6QOAM8ydPhZGB",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "🎉 Reminder: Your Live Session Starts in less than an Hour!",
+        "emailType": "text",
+        "message": "=Hi {{$json[\"Name\"] || \"there\"}},\n\nThis is a friendly reminder that your session \"{{ $json.session }}\" is starting soon!\n\n📅 Date: {{$json[\"date\"]}}  \n🕐 Time: {{$json[\"time\"]}}  \n\nSee you there!\n\nCheers,  \nThe Team\n",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -460,
+        80
+      ],
+      "id": "4199e83f-1b80-4f39-a259-a00dac8e404a",
+      "name": "Send Email Reminder",
+      "webhookId": "1f386633-8f99-4291-99ae-40daa17dbc6c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "jDEyHXZoYQfo2wZK",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const output = [];\n\nconst now = new Date();\nconst nowUTC = now.getTime(); // Convert to UTC timestamp\n\nfor (const item of $input.all()) {\n  const startTime = new Date(item.json.Start_Time); // ISO string with +04:00\n  const startUTC = startTime.getTime();\n\n  const diffMinutes = (startUTC - nowUTC) / 60000;\n\n  if (diffMinutes > 0 && diffMinutes <= 60) {\n    const invitees = JSON.parse(item.json.Invitees || '[]');\n\n    for (const email of invitees) {\n      output.push({\n        json: {\n          email,\n          session: item.json.Session,\n          session_id: item.json.Session_Id,\n          start_time: item.json.Start_Time,\n          date: item.json.Date,\n          time: item.json.Time\n        }\n      });\n    }\n  }\n}\n\n// Return result as required by n8n\nreturn output;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -680,
+        80
+      ],
+      "id": "9a08426d-1f2a-4e7e-807a-3d8fe8ae479a",
+      "name": "Extract Sessions under 60 mins"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Sessions Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Sessions Data": {
+      "main": [
+        [
+          {
+            "node": "Extract Sessions under 60 mins",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Sessions under 60 mins": {
+      "main": [
+        [
+          {
+            "node": "Send Email Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "XEfJhsGUvdYNVb5P"
+  },
+  "versionId": "250b47de-2d67-49e1-8b82-1abb91ab2571",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "848f8f541b82798358ead3f046b054774a39f912a852058c6c5a2fbeb532e7ca"
+  },
+  "id": "Ox6Dtz9XFn6hTgOt",
+  "tags": []
+}

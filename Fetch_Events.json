@@ -1,0 +1,313 @@
+{
+  "name": "Fetch_Events",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -380,
+        -60
+      ],
+      "id": "79ea118f-ace9-4a8f-b933-45adabcad3f8",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "saajida.fhub@gmail.com",
+          "mode": "list",
+          "cachedResultName": "saajida.fhub@gmail.com"
+        },
+        "timeMax": "={{ $now.plus({ day: 3 }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        -160,
+        -60
+      ],
+      "id": "9174c86c-8c0a-4cab-be67-5630bfbefe5d",
+      "name": "Get many events",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "OffXCKUWtNWIzG07",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1PBrzINu84OcQBwuQNz36fMZYrnGIVVmxZH01yz8sDvI",
+          "mode": "list",
+          "cachedResultName": "Sessions",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1PBrzINu84OcQBwuQNz36fMZYrnGIVVmxZH01yz8sDvI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sessions",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1PBrzINu84OcQBwuQNz36fMZYrnGIVVmxZH01yz8sDvI/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Session_Id": "={{ $json.SessionId }}",
+            "Session": "={{ $json.Session }}",
+            "Date": "={{ $json.Start_Date }}",
+            "Start_Time": "={{ $json.Start_Time }}",
+            "Time": "={{ $json.Start_Hour }}",
+            "Invited": "={{ $json.Invited }}",
+            "RSVPed_Yes": "={{ $json.RSVPed_Yes }}",
+            "RSVPed_No": "={{ $json.RSVPed_No }}",
+            "No_Response": "={{ $json.No_Response }}",
+            "Invitees": "={{ $json.Invitees }}",
+            "Status": "={{ $json.Status }}",
+            "Link": "={{ $json.Link }}"
+          },
+          "matchingColumns": [
+            "Session_Id"
+          ],
+          "schema": [
+            {
+              "id": "Session_Id",
+              "displayName": "Session_Id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Session",
+              "displayName": "Session",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Start_Time",
+              "displayName": "Start_Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invited",
+              "displayName": "Invited",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "RSVPed_Yes",
+              "displayName": "RSVPed_Yes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "RSVPed_No",
+              "displayName": "RSVPed_No",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "No_Response",
+              "displayName": "No_Response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invitees",
+              "displayName": "Invitees",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Link",
+              "displayName": "Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Processed",
+              "displayName": "Processed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        480,
+        -60
+      ],
+      "id": "d1cd455e-ce09-4d4d-a2a5-12674e604987",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "N4y6QOAM8ydPhZGB",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().filter(item => {\n  return item.json.organizer?.email === 'saajida.fhub@gmail.com'; // replace with your calendar email\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        40,
+        -60
+      ],
+      "id": "79874d8c-040f-4dbb-8b5b-ff77ef865ffa",
+      "name": "Filter by Owner"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const attendees = item.json.attendees || [];\n  const invited = attendees.length;\n  const rsvpedYes = attendees.filter(p => p.responseStatus === \"accepted\").length;\n  const rsvpedNo = attendees.filter(p => p.responseStatus === \"declined\").length;\n  const noResponse = attendees.filter(p => p.responseStatus === \"needsAction\").length;\n\n  const inviteesEmails = attendees\n    .map(p => p.email || p.emailAddress || \"\")\n    .filter(e => e !== \"\");\n\n  const startDateTime = item.json.start.dateTime || \"\";\n  let formattedDate = \"\";\n  let formattedTime = \"\";\n\n  if (startDateTime) {\n    const dateObj = new Date(startDateTime);\n    formattedDate = dateObj.toISOString().split('T')[0];\n    formattedTime = dateObj.toLocaleTimeString('en-US', {\n      hour: '2-digit',\n      minute: '2-digit',\n      hour12: false,\n      timeZone: 'Asia/Dubai' // Adjust as needed\n    });\n  }\n\n  return {\n    json: {\n      SessionId: item.json.id,\n      Session: item.json.summary,\n      Start_Time: startDateTime,\n      Start_Date: formattedDate,\n      Start_Hour: formattedTime,\n      Invited: invited,\n      RSVPed_Yes: rsvpedYes,\n      RSVPed_No: rsvpedNo,\n      No_Response: noResponse,\n      Invitees: inviteesEmails,\n      Link: item.json.hangoutLink,\n      Status: item.json.status,\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        -60
+      ],
+      "id": "1eb35722-95cf-4fa0-ac3e-64cf161ea26c",
+      "name": "Extract Event Details"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many events": {
+      "main": [
+        [
+          {
+            "node": "Filter by Owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter by Owner": {
+      "main": [
+        [
+          {
+            "node": "Extract Event Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Event Details": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "XEfJhsGUvdYNVb5P"
+  },
+  "versionId": "21dbb0c5-3e1e-477b-be9d-7d9c08c4fb98",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "848f8f541b82798358ead3f046b054774a39f912a852058c6c5a2fbeb532e7ca"
+  },
+  "id": "uNoORAfqOCB6M7T9",
+  "tags": []
+}
